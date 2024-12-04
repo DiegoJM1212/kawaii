@@ -5,18 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login y Registro</title>
     <link rel="stylesheet" href="/css/login.css">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-    <header>    
+    <header>
         <img src="https://i.imgur.com/9NkTv9N.jpg" alt="Logo de KawaiPet" class="logo">
-        <h1>KawaiPet - Login / Registro</h1>
+        <h1>KawaiPet - Cuidamos a tu mascota, como se merece</h1>
     </header>
-    
+
+    <!-- Botón para iniciar el onboarding -->
+    <button id="start-onboarding" style="display: none;">Iniciar Onboarding</button>
+    <h2>onboarding</h2>
+    <div id="onboarding" style="display: none;">
+        <!-- Carrusel de imágenes -->
+        <div id="slides" class="image-carousel">
+            <div class="slide"><img src="https://i.imgur.com/HNeX5uU.png" alt="Veterinaria"></div>
+            <div class="slide"><img src="https://i.imgur.com/47cl7mh.png" alt="Estética"></div>
+            <div class="slide"><img src="https://i.imgur.com/idg1Iqi.png" alt="Hotel"></div>
+            <div class="slide"><img src="https://i.imgur.com/fkgIP7H.png" alt="Bienvenido"></div>
+        </div>
+        
+        <button id="finish-onboarding">Terminar Onboarding</button>
+    </div>
+
     <div class="form-container">
         <div id="message" style="display: none; color: red;"></div> <!-- Para mostrar mensajes -->
 
         <!-- Formulario de Login -->
-        <form id="login-form" style="display: block;">
+        <form id="login-form" style="display: none;">
             <h2>Iniciar Sesión</h2>
             <label for="username">Usuario o Correo Electrónico:</label>
             <input type="text" id="username" name="username" required>
@@ -80,30 +96,42 @@
         <form id="two-factor-form" style="display: none;" action="/usuarios/verificar" method="POST" onsubmit="return handleTwoFactor(event)">
             <h2>Verificación en Dos Pasos</h2>
             <label for="verification-code">Código de Verificación:</label>
-            <input type="text" id="verification-code" name="verificationCode" required=""/>
+            <input type="text" id="verification-code" name="verificationCode" required>
             <button type="submit">Verificar</button>
             <p>No recibiste el código? <a href="#">Reenviar Código</a></p>
         </form>
-
     </div>
 
     <footer>
         <p>© 2024 KawaiPet. Todos los derechos reservados.</p>
     </footer>
 
+    <!-- Botón para instalar la aplicación -->
+    <button id="install-button" style="display: none;" title="Instalar aplicación">Instalar</button>
+
     <script>
-        // Registra el Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('Service Worker registrado con éxito:', registration);
-                    })
-                    .catch((error) => {
-                        console.log('Error al registrar el Service Worker:', error);
-                    });
-            });
-        }
+        // Mostrar el onboarding si el usuario no ha completado el proceso
+        window.onload = function() {
+            if (localStorage.getItem('onboardingCompleted') === 'true') {
+                document.getElementById('login-form').style.display = 'block';
+            } else {
+                document.getElementById('start-onboarding').style.display = 'block';
+            }
+        };
+
+        // Muestra el onboarding cuando el usuario haga clic en "Iniciar Onboarding"
+        document.getElementById('start-onboarding').addEventListener('click', function () {
+            document.getElementById('onboarding').style.display = 'block';  // Muestra el onboarding
+            document.getElementById('login-form').style.display = 'none';  // Oculta el login
+            document.getElementById('register-form').style.display = 'none';  // Oculta el registro
+        });
+
+        // Al terminar el onboarding
+        document.getElementById('finish-onboarding').addEventListener('click', function () {
+            localStorage.setItem('onboardingCompleted', 'true');  // Marca el onboarding como completado
+            document.getElementById('onboarding').style.display = 'none';  // Oculta el onboarding
+            document.getElementById('login-form').style.display = 'block';  // Muestra el login
+        });
 
         document.getElementById('show-register').addEventListener('click', function (e) {
             e.preventDefault();
@@ -134,14 +162,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Error en las credenciales');
                 }
 
                 const data = await response.json();
-                
-                // Verifica si es necesario el paso de verificación en dos pasos
+
                 if (data.twoFactorRequired) {
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('two-factor-form').style.display = 'block';
@@ -161,58 +188,29 @@
             const email = document.getElementById('reg-email').value;
             const telefono = document.getElementById('reg-telefono').value;
             const birthday = document.getElementById('reg-birthday').value;
+            const cedula = document.getElementById('reg-cedula').value;
             const password = document.getElementById('reg-password').value;
             const answer1 = document.getElementById('answer1').value;
             const answer2 = document.getElementById('answer2').value;
             const answer3 = document.getElementById('answer3').value;
-            const cedula = document.getElementById('reg-cedula').value;
 
             try {
                 const response = await fetch('/usuarios/registro', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        nombre, username, email, telefono, birthday, password, answer1, answer2, answer3, cedula
-                    })
+                    body: JSON.stringify({ nombre, username, email, telefono, birthday, cedula, password, answer1, answer2, answer3 })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error al registrar los datos');
+                    throw new Error('Error en el registro');
                 }
-                
-                const data = await response.json();
-                alert('Usuario registrado con éxito');
-                window.location.href = '/login.html';
+
+                alert('Registro exitoso, por favor inicia sesión');
+                document.getElementById('register-form').reset();
+                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
             } catch (error) {
                 document.getElementById('message').innerText = error.message;
-                document.getElementById('message').style.display = 'block';
-            }
-        }
-
-        async function fetchDatosRegistroCivil() {
-            const cedulaInput = document.getElementById('reg-cedula');
-            const cedula = cedulaInput.value.trim();
-
-            if (cedula.length === 0) {
-                alert("Por favor, ingresa una cédula.");
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/registrocivil/registro-civil/${cedula}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    
-                    document.getElementById('message').innerText = 'Cédula verificada correctamente.';
-                    document.getElementById('message').style.display = 'block';
-                } else {
-                    document.getElementById('message').innerText = 'Cédula no válida o no encontrada.';
-                    document.getElementById('message').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error al verificar la cédula:', error);
-                document.getElementById('message').innerText = 'Hubo un error al verificar la cédula.';
                 document.getElementById('message').style.display = 'block';
             }
         }
@@ -229,7 +227,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Código de verificación incorrecto');
+                    throw new Error('Código incorrecto');
                 }
 
                 window.location.href = '/inicio.html';
@@ -238,6 +236,48 @@
                 document.getElementById('message').style.display = 'block';
             }
         }
+
+        function fetchDatosRegistroCivil() {
+            const cedula = document.getElementById('reg-cedula').value;
+
+            if (cedula.length === 10) {
+                fetch(`/usuarios/validar-cedula/${cedula}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.valid) {
+                            alert('Cédula válida');
+                        } else {
+                            alert('Cédula inválida');
+                        }
+                    })
+                    .catch(error => alert('Error al verificar la cédula'));
+            } else {
+                alert('Por favor ingrese una cédula de 10 dígitos');
+            }
+        }
+
+        // Mostrar el botón de instalación si está disponible
+        let deferredPrompt;
+        const installButton = document.getElementById('install-button');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';  // Mostrar el botón de instalar
+        });
+
+        installButton.addEventListener('click', (e) => {
+            // Mostrar el prompt de instalación
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('La app ha sido instalada');
+                } else {
+                    console.log('La app no fue instalada');
+                }
+                deferredPrompt = null;
+            });
+        });
     </script>
 </body>
 </html>
