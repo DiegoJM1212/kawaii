@@ -21,10 +21,9 @@ const citasApiRoutes = require('./routes/citasApiRoutes'); // Ruta de la API de 
 const citaEsteticaApiRoutes = require('./routes/citaEsteticaApiRoutes'); // Ruta de la API de cita estética
 const reservasRoutes = require('./routes/reservasapiRoutes');  // Asegúrate de la ruta correcta
 
-const mascotasRoutes = require('./routes/mascotasapiRoutes'); // Ajusta la ruta de acuerdo con tu estructura de carpetas
 
 // **Aquí agregamos las rutas para la API de PayPal** (nuevo código)
-const paypalRoutes = require('./routes/paypalroute'); // Ruta de la API de PayPal
+const paypalRoute = require('./routes/paypalroute');  // Asegúrate de que la ruta esté correcta
 
 // **Aquí agregamos las rutas para la API de tarjetas** (nuevo código)
 const tarjetasApiRoutes = require('./routes/tarjetasRoutes'); // Ruta de la API de tarjetas
@@ -38,10 +37,16 @@ const segurosRoutes = require('./routes/segurosRoutes');
 const registroCivilRoutes = require('./routes/registroCivil');
 const onboardingRoutes = require('./routes/onboardingRoutes');
 
+
+
+const mascotasservice = require('./servicios/mascotasservice');
+const veterinariosservice = require('./servicios/veterinariosservice');
+const segurosservice = require('./servicios/segurosservice');
+
 const db = require('./data/db'); // Conexión a la base de datos
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 10000;
 
 // ** Aquí agregamos CORS ** 
 const cors = require('cors');  // Importa CORS
@@ -90,26 +95,30 @@ app.use('/api/cita-estetica', citaEsteticaApiRoutes); // Ruta de la API de cita 
 // Usar la ruta de la API de reservas
 app.use('/api/reservarHotel', reservasRoutes);  // Esta es la ruta correcta
 
-// Usar la ruta de la API de mascotas
-app.use(mascotasRoutes); // Esto registra las rutas definidas en mascotasapiRoutes.js
+
 
 // **Agregar la ruta para la API de PayPal aquí**
-app.use('/api/paypal', paypalRoutes); // Ruta de la API de PayPal
-
+app.use('/api/paypal', paypalRoute);  
 // **Agregar la ruta para la API de tarjetas aquí**
 app.use('/api/tarjetas', tarjetasApiRoutes); // Ruta de la API de tarjetas
 
 app.use('/veterinarios', veterinariosRoutes);   
 
 // Usar la ruta de la API del Banco Central
-app.use('/api/banco-central', bancoCentralRoutes);
+app.use('/banco-central', bancoCentralRoutes);
 
 // Usar las rutas del registro civil
-app.use('/api/registrocivil', registroCivilRoutes);
+app.use('/registrocivil', registroCivilRoutes);
 
-app.use('/api/seguros', segurosRoutes);
+app.use('/seguros', segurosRoutes);
 
 app.use('/onboarding', onboardingRoutes);
+
+
+app.use('/api', mascotasservice); // Conectar la API de mascotas
+app.use('/api', veterinariosservice);
+app.use('/api', segurosservice);
+
 
 // Rutas para servir las páginas HTML
 app.get('/inicio', (req, res) => {
@@ -149,7 +158,7 @@ app.get('/banco', (req, res) => {
 });
 
 app.get('/mascotas', (req, res) => {
-    res.sendFile(path.join(__dirname, 'html', 'mascotasapi.html'));
+    res.render('mascotasapi', { apiUrl: 'https://adop.onrender.com' });
 });
 
 // Ruta para 'recuperarpass.html'
@@ -162,9 +171,18 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'html', 'login.html'));
 });
 
+// Ruta para 'onboarding.html'
+app.get('/onboarding', (req, res) => {
+    res.sendFile(path.join(__dirname, 'html', 'onboarding.html'));
+});
+
 // Ruta para el archivo de service worker (sw.js)
-app.get('/sw.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'sw.js'));
+app.get('/service-worker.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'service-worker.js'));
+});
+
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Iniciar el servidor
