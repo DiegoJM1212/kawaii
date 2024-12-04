@@ -182,11 +182,13 @@ async function verificarCodigo(req, res) {
     try {
         const { verificationCode } = req.body;
 
+        // Comprobar si el código de verificación es correcto
         if (req.session.verificationCode && req.session.verificationCode === verificationCode) {
             req.session.isAuthenticated = true;
             req.session.verificationCode = null;
 
-            return res.status(200).json({ message: 'Verificación exitosa' });
+            // Redirigir a la página de inicio de sesión sin mostrar un mensaje de éxito
+            return res.redirect('/inicio.html');  // O la ruta correspondiente a tu página de inicio de sesión
         } else {
             return res.status(401).json({ message: 'Código de verificación incorrecto' });
         }
@@ -196,8 +198,10 @@ async function verificarCodigo(req, res) {
     }
 }
 
+
 module.exports = {
     registrarUsuario,
     iniciarSesion,
     verificarCodigo
 };
+
